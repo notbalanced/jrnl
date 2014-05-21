@@ -119,8 +119,10 @@ def get_text_from_editor(config, template=""):
         if template:
             f.write(template)
     subprocess.call(config['editor'].split() + [tmpfile])
-    with codecs.open(tmpfile, "r", "utf-8") as f:
+    with codecs.open(tmpfile, "r", "cp1252") as f:
         raw = f.read()
+        raw = spec_char_convert(raw)
+        raw = raw.encode("utf-8")
     os.remove(tmpfile)
     if not raw:
         prompt('[Nothing saved to file]')
@@ -129,6 +131,15 @@ def get_text_from_editor(config, template=""):
 def colorize(string):
     """Returns the string wrapped in cyan ANSI escape"""
     return u"\033[36m{}\033[39m".format(string)
+
+def spec_char_convert(string):
+    # Replace "smart" and other single-quote like things
+    string = re.sub(u'[\u02bc\u2018\u2019\u201a\u201b\u2039\u203a\u300c\u300d]',"'", string)
+    # Replace "smart" and other double-quote like things
+    string = re.sub(u'[\u00ab\u00bb\u201c\u201d\u201e\u201f\u300e\u300f]','"', string)
+    string = re.sub(u'[\u2012\u2013\u2014\u2015]','--', string)
+    string = re.sub(u'[\u2026]','...', string)
+    return string
 
 def slugify(string):
     """Slugifies a string.
