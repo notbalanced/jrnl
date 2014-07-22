@@ -137,7 +137,7 @@ def spec_char_convert(string):
     # Replace "smart" and other double-quote like things
     string = re.sub(u'[\u00ab\u00bb\u201c\u201d\u201e\u201f\u300e\u300f]','"', string)
     string = re.sub(u'[\u2012\u2013\u2014\u2015]','--', string)
-    string = re.sub(u'[\u00b7\u00ba\u2022\u00b0]','*', string)
+    string = re.sub(u'[\u00b7\u00ba\u2022\u00b0\u00a7]','*', string)
     string = re.sub(u'[\u2026]','...', string)
     return string
 

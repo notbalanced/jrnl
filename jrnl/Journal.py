@@ -6,6 +6,7 @@ from . import Entry
 from . import util
 from . import time
 import codecs
+import os
 import re
 from datetime import datetime
 import sys
