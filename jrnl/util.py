@@ -133,9 +133,9 @@ def colorize(string):
 
 def spec_char_convert(string):
     # Replace "smart" and other single-quote like things
-    string = re.sub(u'[\u02bc\u2018\u2019\u201a\u201b\u2039\u203a\u300c\u300d]',"'", string)
+    string = re.sub(u'[\u02b9\u02bb\u02bc\u02bd\u02be\u02bf\u2018\u2019\u201b\u2032\u2035]',"'", string)
     # Replace "smart" and other double-quote like things
-    string = re.sub(u'[\u00ab\u00bb\u201c\u201d\u201e\u201f\u300e\u300f]','"', string)
+    string = re.sub(u'[\u02ba\u00ab\u00bb\u201c\u201d\u201e\u201f\u2033\u2036\u300e\u300f]','"', string)
     string = re.sub(u'[\u2012\u2013\u2014\u2015]','--', string)
     string = re.sub(u'[\u00b7\u00ba\u2022\u00b0\u00a7]','*', string)
     string = re.sub(u'[\u2026]','...', string)
