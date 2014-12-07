@@ -185,13 +185,15 @@ class Journal(object):
         else:
             with codecs.open(filename, 'w', "utf-8") as journal_file:
                 journal_file.write(journal)
-        if self.config['git']:                          #<CWM>
-            os.chdir(os.path.dirname(filename))         #<CWM>
-            git_cmd = "git add "+filename               #<CWM>
-            os.system(git_cmd)                          #<CWM>
-            git_cmd = "git commit -m \"%s\"" % e.title  #<CWM>
-            os.system(git_cmd)                          #<CWM>
-            
+        try:
+            if self.config['git']:                          #<CWM>
+                os.chdir(os.path.dirname(filename))         #<CWM>
+                git_cmd = "git add "+filename               #<CWM>
+                os.system(git_cmd)                          #<CWM>
+                git_cmd = "git commit -m \"%s\"" % e.title  #<CWM>
+                os.system(git_cmd)                          #<CWM>
+        except:
+            pass
     def sort(self):
         """Sorts the Journal's entries by date"""
         self.entries = sorted(self.entries, key=lambda entry: entry.date)
@@ -246,8 +248,8 @@ class Journal(object):
         """Constructs a new entry from some raw text input.
         If a date is given, it will parse and use this, otherwise scan for a date in the input first."""
 
-        raw = raw.replace('\\n ', '\n').replace('\\n', '\n')
-        raw = util.spec_char_convert(raw)
+        raw = util.spec_char_convert(raw.replace('\\n ', '\n').replace('\\n', '\n'))
+        #raw = util.spec_char_convert(raw)
         starred = False
         # Split raw text into title and body
         sep = re.search("\n|[\?!.]+ +\n?", raw)
