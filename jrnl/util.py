@@ -86,7 +86,7 @@ def py23_input(msg=""):
 
 def py23_read(msg=""):
     prompt(msg)
-    return u(spec_char_convert(STDIN.read()))
+    return u(STDIN.read())
 
 def yesno(prompt, default=True):
     prompt = prompt.strip() + (" [Y/n]" if default else " [y/N]")
@@ -132,11 +132,8 @@ def get_text_from_editor(config, template=""):
         if template:
             f.write(template)
     subprocess.call(config['editor'].split() + [tmpfile])
-    with codecs.open(tmpfile, "r", "cp1252") as f:
-#    with codecs.open(tmpfile, "r", "utf-8") as f:
-        raw = spec_char_convert(f.read()).encode("utf-8")
-        # raw = spec_char_convert(raw)
-        # raw = raw.encode("utf-8")
+    with codecs.open(tmpfile, "r", "utf-8") as f:
+        raw = f.read()
     os.remove(tmpfile)
     if not raw:
         prompt('[Nothing saved to file]')

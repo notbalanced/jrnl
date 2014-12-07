@@ -248,8 +248,7 @@ class Journal(object):
         """Constructs a new entry from some raw text input.
         If a date is given, it will parse and use this, otherwise scan for a date in the input first."""
 
-        raw = util.spec_char_convert(raw.replace('\\n ', '\n').replace('\\n', '\n'))
-        #raw = util.spec_char_convert(raw)
+        raw = raw.replace('\\n ', '\n').replace('\\n', '\n')
         starred = False
         # Split raw text into title and body
         sep = re.search("\n|[\?!.]+ +\n?", raw)
