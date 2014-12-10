@@ -127,13 +127,13 @@ def load_and_fix_json(json_path):
 
 def get_text_from_editor(config, template=""):
     _, tmpfile = tempfile.mkstemp(prefix="jrnl", text=True, suffix=".txt")
+    os.close(_)
     with codecs.open(tmpfile, 'w', "utf-8") as f:
         if template:
             f.write(template)
     subprocess.call(config['editor'].split() + [tmpfile])
     with codecs.open(tmpfile, "r", "utf-8") as f:
         raw = f.read()
-    os.close(_);
     os.remove(tmpfile)
     if not raw:
         prompt('[Nothing saved to file]')
