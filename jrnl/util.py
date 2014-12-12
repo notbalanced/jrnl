@@ -86,7 +86,7 @@ def py23_input(msg=""):
 
 def py23_read(msg=""):
     prompt(msg)
-    return u(STDIN.read())
+    return u(spec_char_convert(STDIN.read().decode("utf-8")))
 
 def yesno(prompt, default=True):
     prompt = prompt.strip() + (" [Y/n]" if default else " [y/N]")
@@ -127,14 +127,13 @@ def load_and_fix_json(json_path):
 
 def get_text_from_editor(config, template=""):
     _, tmpfile = tempfile.mkstemp(prefix="jrnl", text=True, suffix=".txt")
+    os.close(_)
     with codecs.open(tmpfile, 'w', "utf-8") as f:
         if template:
             f.write(template)
     subprocess.call(config['editor'].split() + [tmpfile])
     with codecs.open(tmpfile, "r", "cp1252") as f:
-        raw = f.read()
-        raw = spec_char_convert(raw)
-        raw = raw.encode("utf-8")
+        raw = spec_char_convert(f.read()).encode("utf-8")
     os.remove(tmpfile)
     if not raw:
         prompt('[Nothing saved to file]')
@@ -144,15 +143,15 @@ def colorize(string):
     """Returns the string wrapped in cyan ANSI escape"""
     return u"\033[36m{}\033[39m".format(string)
 
-def spec_char_convert(string):
+def spec_char_convert(s):
     # Replace "smart" and other single-quote like things
-    string = re.sub(u'[\u02b9\u02bb\u02bc\u02bd\u02be\u02bf\u2018\u2019\u201b\u2032\u2035]',"'", string)
+    s = re.sub(u'[\u02b9\u02bb\u02bc\u02bd\u02be\u02bf\u2018\u2019\u201b\u2032\u2035]',"'", s)
     # Replace "smart" and other double-quote like things
-    string = re.sub(u'[\u02ba\u00ab\u00bb\u201c\u201d\u201e\u201f\u2033\u2036\u300e\u300f]','"', string)
-    string = re.sub(u'[\u2012\u2013\u2014\u2015]','--', string)
-    string = re.sub(u'[\u00b7\u00ba\u2022\u00b0\u00a7]','*', string)
-    string = re.sub(u'[\u2026]','...', string)
-    return string
+    s = re.sub(u'[\u02ba\u00ab\u00bb\u201c\u201d\u201e\u201f\u2033\u2036\u300e\u300f]','"', s)
+    s = re.sub(u'[\u2012\u2013\u2014\u2015]','--', s)
+    s = re.sub(u'[\u00b7\u00ba\u2022\u00b0\u00a7]','*', s)
+    s = re.sub(u'[\u2026]','...', s)
+    return s
 
 def slugify(string):
     """Slugifies a string.

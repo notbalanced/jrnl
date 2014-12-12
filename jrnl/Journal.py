@@ -249,7 +249,6 @@ class Journal(object):
         If a date is given, it will parse and use this, otherwise scan for a date in the input first."""
 
         raw = raw.replace('\\n ', '\n').replace('\\n', '\n')
-        raw = util.spec_char_convert(raw)
         starred = False
         # Split raw text into title and body
         sep = re.search("\n|[\?!.]+ +\n?", raw)
