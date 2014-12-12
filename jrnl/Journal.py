@@ -185,13 +185,15 @@ class Journal(object):
         else:
             with codecs.open(filename, 'w', "utf-8") as journal_file:
                 journal_file.write(journal)
-        if self.config['git']:                          #<CWM>
-            os.chdir(os.path.dirname(filename))         #<CWM>
-            git_cmd = "git add "+filename               #<CWM>
-            os.system(git_cmd)                          #<CWM>
-            git_cmd = "git commit -m \"%s\"" % e.title  #<CWM>
-            os.system(git_cmd)                          #<CWM>
-            
+        try:
+            if self.config['git']:                          #<CWM>
+                os.chdir(os.path.dirname(filename))         #<CWM>
+                git_cmd = "git add "+filename               #<CWM>
+                os.system(git_cmd)                          #<CWM>
+                git_cmd = "git commit -m \"%s\"" % e.title  #<CWM>
+                os.system(git_cmd)                          #<CWM>
+        except:
+            pass
     def sort(self):
         """Sorts the Journal's entries by date"""
         self.entries = sorted(self.entries, key=lambda entry: entry.date)
