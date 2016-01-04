@@ -123,6 +123,11 @@ class Journal(object):
     def __unicode__(self):
         return self.pprint()
 
+    def rawprint(self):
+        sep = "\n"
+        p = sep.join([e.__unicode__() for e in self.entries])
+        return p
+
     def pprint(self, short=False):
         """Prettyprints the journal's entries"""
         sep = "\n"
