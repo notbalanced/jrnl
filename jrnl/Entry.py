@@ -5,29 +5,58 @@ from __future__ import unicode_literals
 import re
 import textwrap
 from datetime import datetime
+from .util import split_title
 
 
 class Entry:
-    def __init__(self, journal, date=None, title="", body="", starred=False):
-        self.journal = journal  # Reference to journal mainly to access it's config
+    def __init__(self, journal, date=None, text="", starred=False):
+        self.journal = journal  # Reference to journal mainly to access its config
         self.date = date or datetime.now()
-        self.title = title.rstrip("\n ")
-        self.body = body.rstrip("\n ")
-        self.tags = self.parse_tags()
+        self.text = text
+        self._title = self._body = self._tags = None
         self.starred = starred
         self.modified = False
 
+    @property
+    def fulltext(self):
+        return self.title + " " + self.body
+
+    def _parse_text(self):
+        raw_text = self.text
+        lines = raw_text.splitlines()
+        if lines[0].strip().endswith("*"):
+            self.starred = True
+            raw_text = lines[0].strip("\n *") + "\n" + "\n".join(lines[1:])
+        self._title, self._body = split_title(raw_text)
+        if self._tags is None:
+            self._tags = list(self._parse_tags())
+
+    @property
+    def title(self):
+        if self._title is None:
+            self._parse_text()
+        return self._title
+
+    @property
+    def body(self):
+        if self._body is None:
+            self._parse_text()
+        return self._body
+
+    @property
+    def tags(self):
+        if self._tags is None:
+            self._parse_text()
+        return self._tags
+
     @staticmethod
     def tag_regex(tagsymbols):
-        pattern = r'(?u)\s([{tags}][-+*#/\w]+)'.format(tags=tagsymbols)
+        pattern = r'(?u)(?:^|\s)([{tags}][-+*#/\w]+)'.format(tags=tagsymbols)
         return re.compile(pattern, re.UNICODE)
 
-    def parse_tags(self):
-        fulltext = " " + " ".join([self.title, self.body]).lower()
+    def _parse_tags(self):
         tagsymbols = self.journal.config['tagsymbols']
-        tags = re.findall(Entry.tag_regex(tagsymbols), fulltext)
-        self.tags = tags
-        return set(tags)
+        return set(tag.lower() for tag in re.findall(Entry.tag_regex(tagsymbols), self.text))
 
     def __unicode__(self):
         """Returns a string representation of the entry to be written into a journal file."""
@@ -45,15 +74,19 @@ class Entry:
         """Returns a pretty-printed version of the entry.
         If short is true, only print the title."""
         date_str = self.date.strftime(self.journal.config['timeformat'])
+        if self.journal.config['indent_character']:
+            indent = self.journal.config['indent_character'].rstrip() + " "
+        else:
+            indent = ""
         if not short and self.journal.config['linewrap']:
             title = textwrap.fill(date_str + " " + self.title, self.journal.config['linewrap'])
             body = "\n".join([
                 textwrap.fill(
-                    (line + " ") if (len(line) == 0) else line,
+                    line,
                     self.journal.config['linewrap'],
-                    initial_indent="| ",
-                    subsequent_indent="| ",
-                    drop_whitespace=False)
+                    initial_indent=indent,
+                    subsequent_indent=indent,
+                    drop_whitespace=True) or indent
                 for line in self.body.rstrip(" \n").splitlines()
             ])
         else:

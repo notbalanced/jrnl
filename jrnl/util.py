@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 # encoding: utf-8
+
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
 import sys
 import os
 import getpass as gp
@@ -13,6 +17,9 @@ import subprocess
 import codecs
 import unicodedata
 import shlex
+import logging
+
+log = logging.getLogger(__name__)
 
 
 PY3 = sys.version_info[0] == 3
@@ -27,10 +34,22 @@ WARNING_COLOR = "\033[33m"
 ERROR_COLOR = "\033[31m"
 RESET_COLOR = "\033[0m"
 
+# Based on Segtok by Florian Leitner
+# https://github.com/fnl/segtok
+SENTENCE_SPLITTER = re.compile(r"""
+(                       # A sentence ends at one of two sequences:
+    [.!?\u203C\u203D\u2047\u2048\u2049\u3002\uFE52\uFE57\uFF01\uFF0E\uFF1F\uFF61]                # Either, a sequence starting with a sentence terminal,
+    [\'\u2019\"\u201D]? # an optional right quote,
+    [\]\)]*             # optional closing brackets and
+    \s+                 # a sequence of required spaces.
+|                       # Otherwise,
+    \n                  # a sentence also terminates newlines.
+)""", re.UNICODE | re.VERBOSE)
+
 
 def getpass(prompt="Password: "):
     if not TEST:
-        return gp.getpass(prompt)
+        return gp.getpass(bytes(prompt))
     else:
         return py23_input(prompt)
 
@@ -73,10 +92,13 @@ def set_keychain(journal_name, password):
 
 def u(s):
     """Mock unicode function for python 2 and 3 compatibility."""
+    if not isinstance(s, str):
+        s = str(s)
     return s if PY3 or type(s) is unicode else s.decode("utf-8")
 
+
 def py2encode(s):
-    """Encodes to UTF-8 in Python 2 but not r."""
+    """Encodes to UTF-8 in Python 2 but not in Python 3."""
     return s.encode("utf-8") if PY2 and type(s) is unicode else s
 
 
@@ -120,6 +142,20 @@ def load_config(config_path):
     """
     with open(config_path) as f:
         return yaml.load(f)
+
+
+def scope_config(config, journal_name):
+    if journal_name not in config['journals']:
+        return config
+    config = config.copy()
+    journal_conf = config['journals'].get(journal_name)
+    if type(journal_conf) is dict:  # We can override the default config on a by-journal basis
+        log.debug('Updating configuration with specific journal overrides %s', journal_conf)
+        config.update(journal_conf)
+    else:  # But also just give them a string to point to the journal file
+        config['journal'] = journal_conf
+    config.pop('journals')
+    return config
 
 
 def get_text_from_editor(config, template=""):
@@ -166,3 +202,11 @@ def byte2int(b):
     """Converts a byte to an integer.
     This is equivalent to ord(bs[0]) on Python 2 and bs[0] on Python 3."""
     return ord(b)if PY2 else b
+
+
+def split_title(text):
+    """Splits the first sentence off from a text."""
+    punkt = SENTENCE_SPLITTER.search(text)
+    if not punkt:
+        return text, ""
+    return text[:punkt.end()].strip(), text[punkt.end():].strip()

@@ -13,13 +13,14 @@ from . import Journal
 from . import util
 from . import install
 from . import plugins
-from .util import WARNING_COLOR, ERROR_COLOR, RESET_COLOR
+from .util import ERROR_COLOR, RESET_COLOR
 import jrnl
 import argparse
 import sys
 import logging
 
 log = logging.getLogger(__name__)
+logging.getLogger("keyring.backend").setLevel(logging.ERROR)
 
 
 def parse_args(args=None):
@@ -43,9 +44,9 @@ def parse_args(args=None):
     exporting = parser.add_argument_group('Export / Import', 'Options for transmogrifying your journal')
     exporting.add_argument('-s', '--short', dest='short', action="store_true", help='Show only titles or line containing the search tags')
     exporting.add_argument('--tags', dest='tags', action="store_true", help='Returns a list of all tags and number of occurences')
-    exporting.add_argument('--export', metavar='TYPE', dest='export', choices=plugins.BaseExporter.PLUGIN_NAMES, help='Export your journal. TYPE can be {}.'.format(plugins.BaseExporter.get_plugin_types_string()), default=False, const=None)
+    exporting.add_argument('--export', metavar='TYPE', dest='export', choices=plugins.EXPORT_FORMATS, help='Export your journal. TYPE can be {}.'.format(plugins.util.oxford_list(plugins.EXPORT_FORMATS)), default=False, const=None)
     exporting.add_argument('-o', metavar='OUTPUT', dest='output', help='Optionally specifies output file when using --export. If OUTPUT is a directory, exports each entry into an individual file instead.', default=False, const=None)
-    exporting.add_argument('--import', metavar='TYPE', dest='import_', choices=plugins.BaseImporter.PLUGIN_NAMES, help='Import entries into your journal. TYPE can be {}, and it defaults to jrnl if nothing else is specified.'.format(plugins.BaseImporter.get_plugin_types_string()), default=False, const='jrnl', nargs='?')
+    exporting.add_argument('--import', metavar='TYPE', dest='import_', choices=plugins.IMPORT_FORMATS, help='Import entries into your journal. TYPE can be {}, and it defaults to jrnl if nothing else is specified.'.format(plugins.util.oxford_list(plugins.IMPORT_FORMATS)), default=False, const='jrnl', nargs='?')
     exporting.add_argument('-i', metavar='INPUT', dest='input', help='Optionally specifies input file when using --import.', default=False, const=None)
     exporting.add_argument('--encrypt', metavar='FILENAME', dest='encrypt', help='Encrypts your existing journal with a new password', nargs='?', default=False, const=None)
     exporting.add_argument('--decrypt', metavar='FILENAME', dest='decrypt', help='Decrypts your journal and stores it in plain text', nargs='?', default=False, const=None)
@@ -154,12 +155,15 @@ def run(manual_args=None):
     # If the first textual argument points to a journal file,
     # use this!
     journal_name = args.text[0] if (args.text and args.text[0] in config['journals']) else 'default'
+
     if journal_name is not 'default':
         args.text = args.text[1:]
     elif "default" not in config['journals']:
         util.prompt("No default journal configured.")
         util.prompt(list_journals(config))
         sys.exit(1)
+
+    config = util.scope_config(config, journal_name)
 
     # If the first remaining argument looks like e.g. '-3', interpret that as a limiter
     if not args.limit and args.text and args.text[0].startswith("-"):
@@ -183,7 +187,14 @@ def run(manual_args=None):
             # Piping data into jrnl
             raw = util.py23_read()
         elif config['editor']:
-            raw = util.get_text_from_editor(config)
+            template = ""
+            if config['template']:
+                try:
+                    template = open(config['template']).read()
+                except:
+                    util.prompt("[Could not read template at '']".format(config['template']))
+                    sys.exit(1)
+            raw = util.get_text_from_editor(config, template)
         else:
             try:
                 raw = util.py23_read("[Compose Entry; " + _exit_multiline_code + " to finish writing]\n")

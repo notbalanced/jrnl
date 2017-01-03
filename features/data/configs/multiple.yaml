@@ -3,6 +3,7 @@ default_minute: 0
 editor: ''
 encrypt: false
 highlight: true
+template: false
 journals:
   default: features/journals/simple.journal
   ideas: features/journals/nothing.journal
@@ -12,3 +13,4 @@ linewrap: 80
 password: ''
 tagsymbols: '@'
 timeformat: '%Y-%m-%d %H:%M'
+indent_character: "|"

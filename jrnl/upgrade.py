@@ -6,10 +6,12 @@ from . import util
 from .EncryptedJournal import EncryptedJournal
 import sys
 import os
+import codecs
 
 
 def backup(filename, binary=False):
     util.prompt("  Created a backup at {}.backup".format(filename))
+    filename = os.path.expanduser(os.path.expandvars(filename))
     with open(filename, 'rb' if binary else 'r') as original:
         contents = original.read()
     with open(filename + ".backup", 'wb' if binary else 'w') as backup:
@@ -17,7 +19,7 @@ def backup(filename, binary=False):
 
 
 def upgrade_jrnl_if_necessary(config_path):
-    with open(config_path) as f:
+    with codecs.open(config_path, "r", "utf-8") as f:
         config_file = f.read()
     if not config_file.strip().startswith("{"):
         return
@@ -82,7 +84,7 @@ older versions of jrnl anymore.
     for journal_name, path in encrypted_journals.items():
         util.prompt("\nUpgrading encrypted '{}' journal stored in {}...".format(journal_name, path))
         backup(path, binary=True)
-        old_journal = Journal.open_journal(journal_name, config, legacy=True)
+        old_journal = Journal.open_journal(journal_name, util.scope_config(config, journal_name), legacy=True)
         new_journal = EncryptedJournal.from_journal(old_journal)
         new_journal.write()
         util.prompt("  Done.")
@@ -90,7 +92,7 @@ older versions of jrnl anymore.
     for journal_name, path in plain_journals.items():
         util.prompt("\nUpgrading plain text '{}' journal stored in {}...".format(journal_name, path))
         backup(path)
-        old_journal = Journal.open_journal(journal_name, config, legacy=True)
+        old_journal = Journal.open_journal(journal_name, util.scope_config(config, journal_name), legacy=True)
         new_journal = Journal.PlainJournal.from_journal(old_journal)
         new_journal.write()
         util.prompt("  Done.")
