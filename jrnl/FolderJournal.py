@@ -56,3 +56,17 @@ class Folder(Journal.Journal):
             journal = "\n".join([e.__unicode__() for e in write_entries])
             with codecs.open(filename, 'w', "utf-8") as journal_file:
                 journal_file.write(journal)
+
+    def parse_editable_str(self, edited):
+        """Parses the output of self.editable_str and updates it's entries."""
+        deleted_entry = False
+        mod_entries = self._parse(edited)
+        if len(mod_entries) != len(self.entries):
+            deleted_entry = True
+        print("mod {} total {}".format(len(mod_entries),len(self.entries)))
+        # Match those entries that can be found in self.entries and set
+        # these to modified, so we can get a count of how many entries got
+        # modified and how many got deleted later.
+        for entry in mod_entries:
+            entry.modified = (not any(entry == old_entry for old_entry in self.entries)) or deleted_entry
+        self.entries = mod_entries
