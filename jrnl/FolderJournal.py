@@ -8,21 +8,28 @@ import codecs
 import os
 import fnmatch
 
+def get_files(journal_config):
+    """Searches through sub directories starting with journal_config and find all text files"""
+    filenames = []
+    for root, dirnames, f in os.walk(journal_config):
+        for filename in fnmatch.filter(f, '*.txt'):
+            filenames.append(os.path.join(root, filename))
+    return filenames
+
 
 class Folder(Journal.Journal):
     """A Journal handling multiple files in a folder"""
 
     def __init__(self, **kwargs):
         self.entries = []
-        self._deleted_entries = []
+        self._diff_entry_dates = []
         super(Folder, self).__init__(**kwargs)
 
+        
     def open(self):
         filenames = []
         self.entries = []
-        for root, dirnames, f in os.walk(self.config['journal']):
-            for filename in fnmatch.filter(f, '*.txt'):
-                filenames.append(os.path.join(root, filename))
+        filenames = get_files(self.config['journal'])
         for filename in filenames:
             with codecs.open(filename, "r", "utf-8") as f:
                 journal = f.read()
@@ -32,10 +39,9 @@ class Folder(Journal.Journal):
 
     def write(self):
         """Writes only the entries that have been modified into proper files."""
-        
-        #Create a list of dates of modified entries
-        modified_dates = []
-        seen_dates = set()
+        #Create a list of dates of modified entries. Start with diff_entry_dates
+        modified_dates = self._diff_entry_dates
+        seen_dates = set(self._diff_entry_dates)
         for e in self.entries:
             if e.modified:
                 if e.date not in seen_dates:
@@ -56,17 +62,23 @@ class Folder(Journal.Journal):
             journal = "\n".join([e.__unicode__() for e in write_entries])
             with codecs.open(filename, 'w', "utf-8") as journal_file:
                 journal_file.write(journal)
+        #look for and delete empty files
+        filenames = []
+        filenames = get_files(self.config['journal'])
+        for filename in filenames:
+            if os.stat(filename).st_size <= 0:
+                #print("empty file: {}".format(filename))
+                os.remove(filename)
 
     def parse_editable_str(self, edited):
         """Parses the output of self.editable_str and updates it's entries."""
-        deleted_entry = False
         mod_entries = self._parse(edited)
-        if len(mod_entries) != len(self.entries):
-            deleted_entry = True
-        print("mod {} total {}".format(len(mod_entries),len(self.entries)))
+        diff_entries = set(self.entries) - set(mod_entries)
+        for e in diff_entries:
+            self._diff_entry_dates.append(e.date)
         # Match those entries that can be found in self.entries and set
         # these to modified, so we can get a count of how many entries got
         # modified and how many got deleted later.
         for entry in mod_entries:
-            entry.modified = (not any(entry == old_entry for old_entry in self.entries)) or deleted_entry
+            entry.modified = not any(entry == old_entry for old_entry in self.entries)
         self.entries = mod_entries
