@@ -72,3 +72,14 @@ Feature: Zapped bugs should stay dead.
             """
             2013-05-17 11:39 This entry has tags!
             """
+            
+    Scenario: Display entries -on today should list entries that were created today.
+        # https://github.com/maebert/jrnl/issues/279
+        Given we use the config "basic.yaml"
+        When we run "jrnl today: Adding an entry right now."
+        Then we should see the message "Entry added"
+        When we run "jrnl -on today"
+        Then the output should contain
+            """
+            Adding an entry right now.
+            """
