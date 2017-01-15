@@ -196,7 +196,7 @@ class Journal(object):
             and (not starred or entry.starred)
             and (not start_date or entry.date >= start_date)
             and (not end_date or entry.date <= end_date)
-            and (not search_plain or search_plain in entry.title or search_plain in entry.body)
+            and (not search_plain or search_plain.lower() in entry.title.lower() or search_plain.lower() in entry.body.lower())
         ]
 
         self.entries = result
