@@ -44,6 +44,7 @@ class Journal(object):
         # Set up date parser
         self.search_tags = None  # Store tags we're highlighting
         self.name = name
+        self.search_plain = None
 
     def __len__(self):
         """Returns the number of entries"""
@@ -133,6 +134,11 @@ class Journal(object):
                     pp = re.sub(tagre,
                                 lambda match: util.colorize(match.group(0)),
                                 pp, re.UNICODE)
+            elif self.search_plain:
+                searchre = re.compile(self.search_plain, re.IGNORECASE)
+                pp = re.sub(searchre,
+                            lambda match: util.colorize(match.group(0)),
+                            pp, re.UNICODE)
             else:
                 pp = re.sub(
                     Entry.Entry.tag_regex(self.config['tagsymbols']),
@@ -178,6 +184,7 @@ class Journal(object):
         If strict is True, all tags must be present in an entry. If false, the
         entry is kept if any tag is present."""
         self.search_tags = set([tag.lower() for tag in tags])
+        self.search_plain = search_plain
         end_date = time.parse(end_date, inclusive=True)
         start_date = time.parse(start_date)
 
