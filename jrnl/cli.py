@@ -181,17 +181,6 @@ def run(manual_args=None):
     log.debug('Using journal "%s"', journal_name)
     mode_compose, mode_export, mode_import = guess_mode(args, config)
 
-    # open journal file or folder
-    if os.path.isdir(config['journal']):
-        if config['journal'].strip("/").endswith(".dayone") or \
-           "entries" in os.listdir(config['journal']):
-            journal = DayOneJournal.DayOne(**config)
-        else:
-            util.prompt("[Error: {0} is a directory, but doesn't seem to be a DayOne journal either.".format(config['journal']))
-            sys.exit(1)
-    else:
-        journal = Journal.Journal(journal_name, **config)
-
     # How to quit writing?
     if "win32" in sys.platform:
         _exit_multiline_code = "on a blank line, press Ctrl+Z and then Enter"
@@ -273,14 +262,14 @@ def run(manual_args=None):
     elif args.encrypt is not False:
         encrypt(journal, filename=args.encrypt)
         # Not encrypting to a separate file: update config!
-        if not args.encrypt or args.encrypt == config['journal']:
+        if not args.encrypt:
             update_config(original_config, {"encrypt": True}, journal_name, force_local=True)
             install.save_config(original_config)
 
     elif args.decrypt is not False:
         decrypt(journal, filename=args.decrypt)
         # Not decrypting to a separate file: update config!
-        if not args.decrypt or args.decrypt == config['journal']:
+        if not args.decrypt:
             update_config(original_config, {"encrypt": False}, journal_name, force_local=True)
             install.save_config(original_config)
 
@@ -299,7 +288,7 @@ def run(manual_args=None):
         if num_deleted:
             prompts.append("{0} {1} deleted".format(num_deleted, "entry" if num_deleted == 1 else "entries"))
         if num_edited:
-            prompts.append("{0} {1} modified".format(num_edited, "entry" if num_edited == 1 else "entries"))
+            prompts.append("{0} {1} modified".format(num_edited, "entry" if num_deleted == 1 else "entries"))
         if prompts:
             util.prompt("[{0}]".format(", ".join(prompts).capitalize()))
         journal.entries += other_entries

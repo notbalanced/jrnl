@@ -8,7 +8,6 @@ from . import time
 import os
 import sys
 import codecs
-import os
 import re
 from datetime import datetime
 import logging
