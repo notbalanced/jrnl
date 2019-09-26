@@ -20,7 +20,7 @@ def parse(date_str, inclusive=False, default_hour=None, default_minute=None):
         return date_str
 
     # Don't try to parse anything with 6 or less characters. It's probably a markdown footnote
-    if len(date_str) <= 6:
+    if len(date_str) <= 6 and date_str.isdigit():
         return None
 
     default_date = DEFAULT_FUTURE if inclusive else DEFAULT_PAST
