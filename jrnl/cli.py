@@ -228,7 +228,9 @@ def run(manual_args=None):
         if util.PY2 and type(raw) is not unicode:
             raw = raw.decode(sys.getfilesystemencoding())
         log.debug('Appending raw line "%s" to journal "%s"', raw, journal_name)
-        journal.new_entry(raw)
+        e =journal.new_entry(raw)
+       # print("Title: {0}".format(e.title))
+        util.write_last_entry_to_file([e])
         util.prompt("[Entry added to {0} journal]".format(journal_name))
         journal.write()
 
@@ -283,7 +285,9 @@ def run(manual_args=None):
         edited = util.get_text_from_editor(config, journal.editable_str())
         journal.parse_editable_str(edited)
         num_deleted = old_num_entries - len(journal)
-        num_edited = len([e for e in journal.entries if e.modified])
+        edited_entries = [e for e in journal.entries if e.modified]
+        num_edited = len([edited_entries])
+        util.write_last_entry_to_file(edited_entries)
         prompts = []
         if num_deleted:
             prompts.append("{0} {1} deleted".format(num_deleted, "entry" if num_deleted == 1 else "entries"))

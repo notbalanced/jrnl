@@ -219,3 +219,11 @@ def split_title(text):
     if not punkt:
         return text, ""
     return text[:punkt.end()].strip(), text[punkt.end():].strip()
+
+def write_last_entry_to_file(entries):
+    """Writes the last entry title to a file"""
+    outfile = os.path.join(os.path.expanduser('~'), "title_temp.txt")
+    with codecs.open(outfile, "w", "utf-8") as f:
+        for e in entries:
+            date_str = e.date.strftime("%Y-%m-%d")
+            f.write("{0} {1}\n".format(date_str, e.title))
