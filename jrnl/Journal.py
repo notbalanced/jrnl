@@ -44,6 +44,7 @@ class Journal(object):
         # Set up date parser
         self.search_tags = None  # Store tags we're highlighting
         self.name = name
+        self.search_plain = None
 
     def __len__(self):
         """Returns the number of entries"""
@@ -155,6 +156,11 @@ class Journal(object):
                     pp = re.sub(tagre,
                                 lambda match: util.colorize(match.group(0)),
                                 pp, re.UNICODE)
+            elif self.search_plain:
+                searchre = re.compile(self.search_plain, re.IGNORECASE)
+                pp = re.sub(searchre,
+                            lambda match: util.colorize(match.group(0)),
+                            pp, re.UNICODE)
             else:
                 pp = re.sub(
                     Entry.Entry.tag_regex(self.config['tagsymbols']),
@@ -187,7 +193,7 @@ class Journal(object):
         tag_counts = set([(tags.count(tag), tag) for tag in tags])
         return [Tag(tag, count=count) for count, tag in sorted(tag_counts)]
 
-    def filter(self, tags=[], start_date=None, end_date=None, starred=False, strict=False, short=False, exclude=[]):
+    def filter(self, tags=[], start_date=None, end_date=None, starred=False, strict=False, short=False, exclude=[], search_plain=False):
         """Removes all entries from the journal that don't match the filter.
 
         tags is a list of tags, each being a string that starts with one of the
@@ -203,6 +209,7 @@ class Journal(object):
         entry is kept if any tag is present, unless they appear in exclude."""
         self.search_tags = set([tag.lower() for tag in tags])
         excluded_tags = set([tag.lower() for tag in exclude])
+        self.search_plain = search_plain
         end_date = time.parse(end_date, inclusive=True)
         start_date = time.parse(start_date)
 
@@ -216,6 +223,7 @@ class Journal(object):
             and (not start_date or entry.date >= start_date)
             and (not end_date or entry.date <= end_date)
             and (not exclude or not excluded(entry.tags))
+            and (not search_plain or search_plain.lower() in entry.title.lower() or search_plain.lower() in entry.body.lower())
         ]
 
         self.entries = result
